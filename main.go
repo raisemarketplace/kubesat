@@ -7,10 +7,12 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
 	"os/user"
 	"path/filepath"
 	"sort"
 	"strings"
+	"syscall"
 	"time"
 
 	termbox "github.com/nsf/termbox-go"
@@ -1042,6 +1044,7 @@ func main() {
 	kubecontext := flag.String("kubecontext", "", "context within the kube config to use")
 	flag.Parse()
 
+	// kubernetes client config
 	config, err := clientcmd.NewInteractiveDeferredLoadingClientConfig(
 		&clientcmd.ClientConfigLoadingRules{ExplicitPath: *kubeconfig},
 		&clientcmd.ConfigOverrides{CurrentContext: *kubecontext},
@@ -1087,12 +1090,17 @@ func main() {
 		termbox.SetOutputMode(termbox.Output256)
 		termboxEvents := kit.StartPollEvents(context.TODO())
 
+		exitSignal := make(chan os.Signal)
+		signal.Notify(exitSignal, os.Interrupt, syscall.SIGHUP, syscall.SIGTERM)
+
 		for {
 			kit.Update(termbox.ColorWhite, termbox.ColorDefault, func(buf kit.BufferSlice) {
 				Update(state, buf)
 			})
 
 			select {
+			case <-exitSignal:
+				return nil
 			case ch := <-termboxEvents.Chars:
 				if ch == 'q' {
 					return nil
