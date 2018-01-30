@@ -118,6 +118,13 @@ func (nt *NodeTable) WithRowAtName(name string, f func(*NodeTableRow)) {
 	nt.updateIndexFor(i, row)
 }
 
+func (nt *NodeTable) ByAwsID(id string) (*NodeTableRow, int, bool) {
+	if i, found := nt.awsIDIndex[id]; found {
+		return nt.Rows[i], i, true
+	}
+	return nil, 0, false
+}
+
 func (nt *NodeTable) ByName(name string) (*NodeTableRow, int, bool) {
 	if i, found := nt.nameIndex[name]; found {
 		return nt.Rows[i], i, true

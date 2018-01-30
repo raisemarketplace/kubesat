@@ -72,11 +72,11 @@ type State struct {
 func (s *State) SelectMove(inc int) {
 	index := 0
 
-	if _, i, found := s.Snapshot.NodeTable.ByName(s.Selected); found {
+	if _, i, found := s.Snapshot.NodeTable.ByAwsID(s.Selected); found {
 		index = i + inc
 	}
 	if index >= 0 && index < len(s.Snapshot.NodeTable.Rows) {
-		s.Selected = s.Snapshot.NodeTable.Rows[index].Name
+		s.Selected = s.Snapshot.NodeTable.Rows[index].AwsID
 	}
 }
 
@@ -203,7 +203,7 @@ func Update(state State, buf kit.BufferSlice) {
 				padding,
 				kit.String(data.AwsState))
 
-			if data.Name == state.Selected {
+			if data.AwsID == state.Selected {
 				row.Fg = termbox.ColorBlack
 				row.Bg = termbox.ColorYellow
 			}
