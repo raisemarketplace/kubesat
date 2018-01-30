@@ -227,7 +227,7 @@ func main() {
 		return ""
 	}()
 	kubeconfig := flag.String("kubeconfig", defaultKubeconfig, "path to the kube config file")
-	kubecontext := flag.String("kubecontext", "", "context within the kube config to use")
+	kubecontext := flag.String("context", "", "context within the kubeconfig to use")
 	flag.Parse()
 
 	// kubernetes client config
