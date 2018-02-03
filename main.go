@@ -226,9 +226,15 @@ func main() {
 		}
 		return ""
 	}()
+	showVersion := flag.Bool("version", false, "display version information")
 	kubeconfig := flag.String("kubeconfig", defaultKubeconfig, "path to the kube config file")
 	kubecontext := flag.String("context", "", "context within the kubeconfig to use")
 	flag.Parse()
+
+	if *showVersion {
+		fmt.Printf("%s version %s\n", Program, Version)
+		return
+	}
 
 	// kubernetes client config
 	config, err := clientcmd.NewInteractiveDeferredLoadingClientConfig(
