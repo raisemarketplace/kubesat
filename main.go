@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -18,7 +17,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 
@@ -86,35 +84,6 @@ func (s *State) SelectDown() {
 
 func (s *State) SelectUp() {
 	s.SelectMove(-1)
-}
-
-func LeaderHolderIdentity(clientset *kubernetes.Clientset, name string) (string, error) {
-	ep, err := clientset.CoreV1().Endpoints("kube-system").Get(name, metav1.GetOptions{})
-	if err != nil {
-		return "", fmt.Errorf("error getting ep/%s", name, err)
-	}
-
-	annotation := "control-plane.alpha.kubernetes.io/leader"
-	jsonString, ok := ep.ObjectMeta.Annotations[annotation]
-	if !ok {
-		return "", fmt.Errorf("no annotation present: %s", annotation)
-	}
-
-	var info map[string]interface{}
-	if err := json.Unmarshal([]byte(jsonString), &info); err != nil {
-		return "", fmt.Errorf("error unmarshling %s json data: %s", annotation, err)
-	}
-
-	holderIdentity, ok := info["holderIdentity"]
-	if !ok {
-		return "", fmt.Errorf("holderIdentity not found in %s data", annotation)
-	}
-
-	if id, ok := holderIdentity.(string); ok {
-		return id, nil
-	}
-
-	return "", fmt.Errorf("expected holderIdentity string but found %t", holderIdentity)
 }
 
 func Optional(b bool, ifTrue string) string {
@@ -232,7 +201,7 @@ func main() {
 	flag.Parse()
 
 	if *showVersion {
-		fmt.Printf("%s version %s\n", Program, Version)
+		fmt.Printf("%s-%s\n", Program, Version)
 		return
 	}
 

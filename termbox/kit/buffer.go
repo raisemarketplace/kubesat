@@ -28,13 +28,6 @@ func min(a, b int) int {
 	return a
 }
 
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}
-
 func (sl BufferSlice) Slice(x, y, width, height int) BufferSlice {
 	if x < 0 {
 		panic(fmt.Sprintf("x must be non-negative: %d", x))
