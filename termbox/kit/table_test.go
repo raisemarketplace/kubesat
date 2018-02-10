@@ -17,7 +17,7 @@ func TestStringWidth(t *testing.T) {
 	for _, d := range data {
 		result := String(d.Input).Width()
 		if d.Expect != result {
-			t.Fatalf("%s: expected: %s but was: %s", d.Name, d.Expect, result)
+			t.Fatalf("%s: expected: %d but was: %d", d.Name, d.Expect, result)
 		}
 	}
 }

@@ -98,7 +98,7 @@ func FetchPods(clientset *kubernetes.Clientset) ([]v1.Pod, error) {
 	for _, namespace := range namespaces.Items {
 		pods, err := clientset.CoreV1().Pods(namespace.Name).List(metav1.ListOptions{})
 		if err != nil {
-			return nil, fmt.Errorf("error listing pods in namespace %s: %s", namespace, err)
+			return nil, fmt.Errorf("error listing pods in namespace %v: %s", namespace, err)
 		}
 
 		allPods = append(allPods, pods.Items...)
@@ -122,7 +122,7 @@ func FetchEndpoints(clientset *kubernetes.Clientset, names []NamespaceName) (map
 	for _, name := range names {
 		ep, err := clientset.CoreV1().Endpoints(name.Namespace).Get(name.Name, metav1.GetOptions{})
 		if err != nil {
-			return nil, fmt.Errorf("error getting %s:ep/%s", name.Namespace, name.Name, err)
+			return nil, fmt.Errorf("error getting %s:ep/%s: %s", name.Namespace, name.Name, err)
 		}
 		eps[name] = *ep
 	}
@@ -187,7 +187,7 @@ func (db *DB) loopAws(initialNodes []v1.Node) {
 
 		db.Aws() <- awsData
 
-		ok := false
+		var ok bool
 		nodes, ok = db.Nodes()
 		if !ok {
 			db.logger.Errorf("error fetching existing nodes: %v", err)
