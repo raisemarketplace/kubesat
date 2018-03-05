@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"os/user"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
@@ -98,8 +99,9 @@ func Update(state State, buf kit.BufferSlice) {
 	areas["topline"] = kit.AreaAt(0, 0).Span(1, 1).WidthFr(1).HeightCh(1)
 	areas["podcounts"] = kit.AreaAt(0, 1).Span(1, 1).WidthFr(1).HeightCh(1)
 	areas["nodecount"] = kit.AreaAt(0, 2).Span(1, 1).WidthFr(1).HeightCh(1)
-	areas["main"] = kit.AreaAt(0, 3).Span(1, 1).WidthFr(1).HeightFr(1)
-	areas["log"] = kit.AreaAt(0, 4).Span(1, 1).WidthFr(1).HeightCh(5)
+	areas["component"] = kit.AreaAt(0, 3).Span(1, 1).WidthFr(1).HeightCh(1)
+	areas["main"] = kit.AreaAt(0, 4).Span(1, 1).WidthFr(1).HeightFr(1)
+	areas["log"] = kit.AreaAt(0, 5).Span(1, 1).WidthFr(1).HeightCh(5)
 
 	// TODO: create grid outside of loop; maybe cache layout result
 	bufs := kit.NewGrid(areas).LayoutBuffers(buf)
@@ -110,6 +112,12 @@ func Update(state State, buf kit.BufferSlice) {
 	}
 	topline = append(topline, kit.String("press 'q' to quit"))
 	topline.Draw(bufs["topline"])
+
+	cses := make([]string, len(state.Snapshot.ComponentStatuses))
+	for i, cs := range state.Snapshot.ComponentStatuses {
+		cses[i] = fmt.Sprintf("%s:%s", cs.Name, cs.Status)
+	}
+	kit.String(strings.Join(cses, "  ")).Draw(bufs["component"])
 
 	padding := kit.Rune(' ')
 

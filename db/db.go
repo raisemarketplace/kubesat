@@ -3,6 +3,7 @@ package db
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -16,10 +17,29 @@ import (
 )
 
 type Snapshot struct {
-	ClusterName      string
-	ClusterPodCounts PodCounts
-	NodeCount        int
-	NodeTable        *NodeTable
+	ComponentStatuses []ComponentStatus
+	ClusterName       string
+	ClusterPodCounts  PodCounts
+	NodeCount         int
+	NodeTable         *NodeTable
+}
+
+type ComponentStatus struct {
+	Name   string
+	Status string
+}
+
+type ComponentStatusSortByName []ComponentStatus
+
+// Len implements sort.Interface
+func (a ComponentStatusSortByName) Len() int { return len(a) }
+
+// Swap implements sort.Interface
+func (a ComponentStatusSortByName) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+
+// Less implements sort.Interface, sorting by role, aws state, name
+func (a ComponentStatusSortByName) Less(i, j int) bool {
+	return a[i].Name < a[j].Name
 }
 
 type NamespaceName struct {
@@ -28,9 +48,10 @@ type NamespaceName struct {
 }
 
 type KubernetesData struct {
-	Nodes     []v1.Node
-	Pods      []v1.Pod
-	Endpoints map[NamespaceName]v1.Endpoints
+	ComponentStatuses []v1.ComponentStatus
+	Nodes             []v1.Node
+	Pods              []v1.Pod
+	Endpoints         map[NamespaceName]v1.Endpoints
 }
 
 type AwsData struct {
@@ -86,6 +107,14 @@ func NewDB(logger *logger.Logger, clientset *kubernetes.Clientset, ec2client *ec
 	return &db
 }
 
+func FetchComponentStatuses(clientset *kubernetes.Clientset) ([]v1.ComponentStatus, error) {
+	cses, err := clientset.CoreV1().ComponentStatuses().List(metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	return cses.Items, nil
+}
+
 // FetchPods requests pods from all namespaces and returns a merged list.
 func FetchPods(clientset *kubernetes.Clientset) ([]v1.Pod, error) {
 	namespaces, err := clientset.CoreV1().Namespaces().List(metav1.ListOptions{})
@@ -130,6 +159,11 @@ func FetchEndpoints(clientset *kubernetes.Clientset, names []NamespaceName) (map
 }
 
 func FetchKubernetes(clientset *kubernetes.Clientset) (KubernetesData, error) {
+	cses, err := FetchComponentStatuses(clientset)
+	if err != nil {
+		return KubernetesData{}, err
+	}
+
 	nodes, err := FetchNodes(clientset)
 	if err != nil {
 		return KubernetesData{}, err
@@ -146,7 +180,11 @@ func FetchKubernetes(clientset *kubernetes.Clientset) (KubernetesData, error) {
 		return KubernetesData{}, err
 	}
 
-	return KubernetesData{Nodes: nodes, Pods: pods, Endpoints: eps}, nil
+	return KubernetesData{
+		ComponentStatuses: cses,
+		Nodes:             nodes,
+		Pods:              pods,
+		Endpoints:         eps}, nil
 }
 
 func FetchAws(ec2client *ec2.EC2, nodes []v1.Node) (AwsData, error) {
@@ -244,6 +282,24 @@ func (db *DB) Nodes() ([]v1.Node, bool) {
 func Join(kubernetesData KubernetesData, awsData AwsData) Snapshot {
 	nodeTable := NewNodeTable()
 
+	// component statuses
+	cses := make([]ComponentStatus, len(kubernetesData.ComponentStatuses))
+	for i, cs := range kubernetesData.ComponentStatuses {
+		var status = "Unknown"
+		if len(cs.Conditions) == 1 {
+			switch cs.Conditions[0].Status {
+			case v1.ConditionTrue:
+				status = "Healthy"
+			case v1.ConditionFalse:
+				status = "Unhealthy"
+			}
+		}
+		cses[i].Name = cs.ObjectMeta.Name
+		cses[i].Status = status
+	}
+	sort.Sort(ComponentStatusSortByName(cses))
+
+	// controller manager, scheduler leaders
 	controllerManagerLeader, err := LeaderHolderIdentity(kubernetesData.Endpoints[NamespaceName{"kube-system", "kube-controller-manager"}])
 	haveControllerManagerLeader := (err == nil)
 	schedulerLeader, err := LeaderHolderIdentity(kubernetesData.Endpoints[NamespaceName{"kube-system", "kube-scheduler"}])
@@ -352,10 +408,11 @@ func Join(kubernetesData KubernetesData, awsData AwsData) Snapshot {
 	nodeTable.Sort()
 
 	return Snapshot{
-		ClusterName:      clusterName,
-		ClusterPodCounts: clusterCounts,
-		NodeCount:        len(kubernetesData.Nodes),
-		NodeTable:        nodeTable,
+		ComponentStatuses: cses,
+		ClusterName:       clusterName,
+		ClusterPodCounts:  clusterCounts,
+		NodeCount:         len(kubernetesData.Nodes),
+		NodeTable:         nodeTable,
 	}
 }
 
