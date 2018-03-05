@@ -94,12 +94,22 @@ func Optional(b bool, ifTrue string) string {
 }
 
 func Update(state State, buf kit.BufferSlice) {
+	areas := make(map[string]kit.Area)
+	areas["topline"] = kit.AreaAt(0, 0).Span(1, 1).WidthFr(1).HeightCh(1)
+	areas["podcounts"] = kit.AreaAt(0, 1).Span(1, 1).WidthFr(1).HeightCh(1)
+	areas["nodecount"] = kit.AreaAt(0, 2).Span(1, 1).WidthFr(1).HeightCh(1)
+	areas["main"] = kit.AreaAt(0, 3).Span(1, 1).WidthFr(1).HeightFr(1)
+	areas["log"] = kit.AreaAt(0, 4).Span(1, 1).WidthFr(1).HeightCh(5)
+
+	// TODO: create grid outside of loop; maybe cache layout result
+	bufs := kit.NewGrid(areas).LayoutBuffers(buf)
+
 	topline := make(kit.Line, 0, 0)
 	for _, color := range BananaColors {
 		topline = append(topline, kit.Cell{Banana, color, 0})
 	}
 	topline = append(topline, kit.String("press 'q' to quit"))
-	topline.Draw(buf.Slice(0, 0, buf.Width, 1))
+	topline.Draw(bufs["topline"])
 
 	padding := kit.Rune(' ')
 
@@ -137,7 +147,7 @@ func Update(state State, buf kit.BufferSlice) {
 		kit.AttrString{fmt.Sprintf("running:%d  ", counts.Running), termbox.ColorBlue, 0},
 		kit.AttrString{fmt.Sprintf("succeeded:%d  ", counts.Succeeded), termbox.ColorBlue, 0},
 		kit.AttrString{fmt.Sprintf("failed:%d  ", counts.Failed), termbox.ColorRed, 0},
-	}.Draw(buf.Slice(0, 2, buf.Width, 1))
+	}.Draw(bufs["podcounts"])
 
 	if state.Snapshot.NodeTable != nil {
 		if len(state.Snapshot.NodeTable.Rows) > 0 {
@@ -145,7 +155,7 @@ func Update(state State, buf kit.BufferSlice) {
 				kit.AttrString{fmt.Sprintf("nodes:%d", state.Snapshot.NodeCount),
 					termbox.ColorCyan, 0},
 				kit.String(fmt.Sprintf("  cluster:%s", state.Snapshot.ClusterName)),
-			}.Draw(buf.Slice(0, 1, buf.Width, 1))
+			}.Draw(bufs["nodecount"])
 		}
 
 		for _, data := range state.Snapshot.NodeTable.Rows {
@@ -181,10 +191,10 @@ func Update(state State, buf kit.BufferSlice) {
 		}
 	}
 
-	table.Draw(buf.Slice(0, 3, buf.Width, buf.Height-3))
+	table.Draw(bufs["main"])
 
 	if state.Logger.Len() > 0 {
-		kit.AttrString{fmt.Sprintf("%s", state.Logger.At(0).Message), termbox.ColorRed, 0}.Draw(buf.Slice(0, buf.Height-1, buf.Width, 1))
+		kit.AttrString{fmt.Sprintf("%s", state.Logger.At(0).Message), termbox.ColorRed, 0}.Draw(bufs["log"])
 	}
 }
 

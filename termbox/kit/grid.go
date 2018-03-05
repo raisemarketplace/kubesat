@@ -328,3 +328,13 @@ func (grid *Grid) Layout(width, height int) map[string]Rect {
 
 	return rects
 }
+
+func (grid *Grid) LayoutBuffers(buf BufferSlice) map[string]BufferSlice {
+	bufs := make(map[string]BufferSlice)
+
+	for name, rect := range grid.Layout(buf.Width, buf.Height) {
+		bufs[name] = buf.Slice(rect.X, rect.Y, rect.Width, rect.Height)
+	}
+
+	return bufs
+}
