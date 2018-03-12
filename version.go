@@ -1,6 +1,6 @@
 package main
 
-const (
+var (
 	Program = "kubesat"
-	Version = "0.1-3-gbf3eba5"
+	Version = "0.2-SNAPSHOT"
 )
