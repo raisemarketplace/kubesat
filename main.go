@@ -110,7 +110,8 @@ func Update(state State, buf kit.BufferSlice) {
 	for _, color := range BananaColors {
 		topline = append(topline, kit.Cell{Banana, color, 0})
 	}
-	topline = append(topline, kit.String("press 'q' to quit"))
+	topline = append(topline, kit.String(fmt.Sprintf("%s-%s", Program, Version)))
+	topline = append(topline, kit.String(" | press 'q' to quit"))
 	grid.Items["topline"] = topline
 
 	cses := make([]string, len(state.Snapshot.ComponentStatuses))
