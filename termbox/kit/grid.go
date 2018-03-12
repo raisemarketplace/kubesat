@@ -18,6 +18,7 @@ func (r Rect) String() string {
 }
 
 type Grid struct {
+	Items map[string]Drawer
 	areas map[string]Area
 }
 
@@ -31,7 +32,10 @@ func max(a, b int) int {
 }
 
 func NewGrid(areas map[string]Area) *Grid {
-	grid := &Grid{areas: areas}
+	grid := &Grid{
+		Items: make(map[string]Drawer),
+		areas: areas,
+	}
 
 	// ensure no overlaps
 	height, width := grid.RowsAndColumns()
@@ -53,6 +57,15 @@ func NewGrid(areas map[string]Area) *Grid {
 }
 
 func (grid *Grid) Draw(dest BufferSlice) {
+	// TODO: maybe cache layout result
+	bufs := grid.LayoutBuffers(dest)
+
+	for name, drawer := range grid.Items {
+		if drawer == nil {
+			continue
+		}
+		drawer.Draw(bufs[name])
+	}
 }
 
 func (grid *Grid) RowsAndColumns() (int, int) {

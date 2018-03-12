@@ -103,21 +103,21 @@ func Update(state State, buf kit.BufferSlice) {
 	areas["main"] = kit.AreaAt(0, 4).Span(1, 1).WidthFr(1).HeightFr(1)
 	areas["log"] = kit.AreaAt(0, 5).Span(1, 1).WidthFr(1).HeightCh(5)
 
-	// TODO: create grid outside of loop; maybe cache layout result
-	bufs := kit.NewGrid(areas).LayoutBuffers(buf)
+	// TODO: create grid outside of loop
+	grid := kit.NewGrid(areas)
 
 	topline := make(kit.Line, 0, 0)
 	for _, color := range BananaColors {
 		topline = append(topline, kit.Cell{Banana, color, 0})
 	}
 	topline = append(topline, kit.String("press 'q' to quit"))
-	topline.Draw(bufs["topline"])
+	grid.Items["topline"] = topline
 
 	cses := make([]string, len(state.Snapshot.ComponentStatuses))
 	for i, cs := range state.Snapshot.ComponentStatuses {
 		cses[i] = fmt.Sprintf("%s:%s", cs.Name, cs.Status)
 	}
-	kit.String(strings.Join(cses, "  ")).Draw(bufs["component"])
+	grid.Items["component"] = kit.String(strings.Join(cses, "  "))
 
 	padding := kit.Rune(' ')
 
@@ -148,22 +148,22 @@ func Update(state State, buf kit.BufferSlice) {
 	table := kit.Table{Rows: []kit.TableRow{header}}
 
 	counts := state.Snapshot.ClusterPodCounts
-	kit.Line{
+	grid.Items["podcounts"] = kit.Line{
 		// FIXME: pods count
 		kit.AttrString{fmt.Sprintf("pods:%d  ", counts.Total), termbox.ColorBlue, 0},
 		kit.AttrString{fmt.Sprintf("pending:%d  ", counts.Pending), termbox.ColorYellow, 0},
 		kit.AttrString{fmt.Sprintf("running:%d  ", counts.Running), termbox.ColorBlue, 0},
 		kit.AttrString{fmt.Sprintf("succeeded:%d  ", counts.Succeeded), termbox.ColorBlue, 0},
 		kit.AttrString{fmt.Sprintf("failed:%d  ", counts.Failed), termbox.ColorRed, 0},
-	}.Draw(bufs["podcounts"])
+	}
 
 	if state.Snapshot.NodeTable != nil {
 		if len(state.Snapshot.NodeTable.Rows) > 0 {
-			kit.Line{
+			grid.Items["nodecount"] = kit.Line{
 				kit.AttrString{fmt.Sprintf("nodes:%d", state.Snapshot.NodeCount),
 					termbox.ColorCyan, 0},
 				kit.String(fmt.Sprintf("  cluster:%s", state.Snapshot.ClusterName)),
-			}.Draw(bufs["nodecount"])
+			}
 		}
 
 		for _, data := range state.Snapshot.NodeTable.Rows {
@@ -199,11 +199,13 @@ func Update(state State, buf kit.BufferSlice) {
 		}
 	}
 
-	table.Draw(bufs["main"])
+	grid.Items["main"] = &table
 
 	if state.Logger.Len() > 0 {
-		kit.AttrString{fmt.Sprintf("%s", state.Logger.At(0).Message), termbox.ColorRed, 0}.Draw(bufs["log"])
+		grid.Items["log"] = kit.AttrString{fmt.Sprintf("%s", state.Logger.At(0).Message), termbox.ColorRed, 0}
 	}
+
+	grid.Draw(buf)
 }
 
 func main() {
