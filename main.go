@@ -63,6 +63,7 @@ func AgeColor(age time.Duration) termbox.Attribute {
 }
 
 type State struct {
+	Grid     *kit.Grid
 	Snapshot db.Snapshot
 	Selected string
 	Logger   *logger.Logger
@@ -95,16 +96,8 @@ func Optional(b bool, ifTrue string) string {
 }
 
 func Update(state State, buf kit.BufferSlice) {
-	areas := make(map[string]kit.Area)
-	areas["topline"] = kit.AreaAt(0, 0).Span(1, 1).WidthFr(1).HeightCh(1)
-	areas["podcounts"] = kit.AreaAt(0, 1).Span(1, 1).WidthFr(1).HeightCh(1)
-	areas["nodecount"] = kit.AreaAt(0, 2).Span(1, 1).WidthFr(1).HeightCh(1)
-	areas["component"] = kit.AreaAt(0, 3).Span(1, 1).WidthFr(1).HeightCh(1)
-	areas["main"] = kit.AreaAt(0, 4).Span(1, 1).WidthFr(1).HeightFr(1)
-	areas["log"] = kit.AreaAt(0, 5).Span(1, 1).WidthFr(1).HeightCh(5)
-
-	// TODO: create grid outside of loop
-	grid := kit.NewGrid(areas)
+	grid := state.Grid
+	grid.Clear()
 
 	topline := make(kit.Line, 0, 0)
 	for _, color := range BananaColors {
@@ -260,7 +253,16 @@ func main() {
 
 	db := db.NewDB(logger, clientset, ec2client)
 
-	state := State{Logger: logger}
+	areas := make(map[string]kit.Area)
+	areas["topline"] = kit.AreaAt(0, 0).Span(1, 1).WidthFr(1).HeightCh(1)
+	areas["podcounts"] = kit.AreaAt(0, 1).Span(1, 1).WidthFr(1).HeightCh(1)
+	areas["nodecount"] = kit.AreaAt(0, 2).Span(1, 1).WidthFr(1).HeightCh(1)
+	areas["component"] = kit.AreaAt(0, 3).Span(1, 1).WidthFr(1).HeightCh(1)
+	areas["main"] = kit.AreaAt(0, 4).Span(1, 1).WidthFr(1).HeightFr(1)
+	areas["log"] = kit.AreaAt(0, 5).Span(1, 1).WidthFr(1).HeightCh(5)
+	grid := kit.NewGrid(areas)
+
+	state := State{Grid: grid, Logger: logger}
 
 	if err := func() error {
 		err := termbox.Init()

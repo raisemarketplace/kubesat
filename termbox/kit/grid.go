@@ -20,6 +20,11 @@ func (r Rect) String() string {
 type Grid struct {
 	Items map[string]Drawer
 	areas map[string]Area
+
+	// cached previous layout
+	layoutWidth  int
+	layoutHeight int
+	layout       map[string]Rect
 }
 
 type stringwrap struct{ String string }
@@ -33,9 +38,9 @@ func max(a, b int) int {
 
 func NewGrid(areas map[string]Area) *Grid {
 	grid := &Grid{
-		Items: make(map[string]Drawer),
 		areas: areas,
 	}
+	grid.Clear()
 
 	// ensure no overlaps
 	height, width := grid.RowsAndColumns()
@@ -54,6 +59,11 @@ func NewGrid(areas map[string]Area) *Grid {
 	}
 
 	return grid
+}
+
+// Clear clears current items from the grid.
+func (grid *Grid) Clear() {
+	grid.Items = make(map[string]Drawer)
 }
 
 func (grid *Grid) Draw(dest BufferSlice) {
@@ -227,8 +237,15 @@ func (d *DeferredSizes) Push(i int, fn di.DeferredInt) {
 }
 
 // Layout the grid into a rectangle of the given dimensions. The units
-// of the returned rectangles are in cells.
+// of the returned rectangles are in cells. The previous layout (only
+// one previous layout) is cached internally, and the cached layout
+// returned for subsequent calls with the same dimensions.
 func (grid *Grid) Layout(width, height int) map[string]Rect {
+	// return cached layout if possible
+	if grid.layout != nil && grid.layoutWidth == width && grid.layoutHeight == height {
+		return grid.layout
+	}
+
 	nrows, ncols := grid.RowsAndColumns()
 
 	// rows have variable height
@@ -338,6 +355,11 @@ func (grid *Grid) Layout(width, height int) map[string]Rect {
 
 		rects[name] = rect
 	}
+
+	// cache layout
+	grid.layoutHeight = height
+	grid.layoutWidth = width
+	grid.layout = rects
 
 	return rects
 }
