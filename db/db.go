@@ -216,7 +216,7 @@ func (db *DB) loopKubernetes() {
 func (db *DB) loopAws(initialNodes []v1.Node) {
 	nodes := initialNodes
 
-	for ; ; time.Sleep(10 * time.Second) {
+	for ; ; time.Sleep(20 * time.Second) {
 		awsData, err := FetchAws(db.ec2client, nodes)
 		if err != nil {
 			db.logger.Errorf("error fetching aws: %v", err)
