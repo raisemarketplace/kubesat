@@ -68,8 +68,6 @@ func New(capacity int) *Logger {
 }
 
 func (logger *Logger) Len() int {
-	return len(logger.messages)
-
 	replyChan := make(chan int)
 	logger.lenRequests <- replyChan
 	reply, ok := <-replyChan
