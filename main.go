@@ -23,6 +23,7 @@ import (
 
 	"github.com/raisemarketplace/kubesat/db"
 	"github.com/raisemarketplace/kubesat/logger"
+	"github.com/raisemarketplace/kubesat/proc"
 	"github.com/raisemarketplace/kubesat/termbox/kit"
 )
 
@@ -67,6 +68,10 @@ type State struct {
 	Snapshot db.Snapshot
 	Selected string
 	Logger   *logger.Logger
+	Procs    []proc.Proc
+
+	Clientset *kubernetes.Clientset
+	EC2       *ec2.EC2
 }
 
 func (s *State) SelectMove(inc int) {
@@ -95,7 +100,7 @@ func Optional(b bool, ifTrue string) string {
 	return ""
 }
 
-func Update(state State, buf kit.BufferSlice) {
+func Update(state *State, buf kit.BufferSlice) {
 	grid := state.Grid
 	grid.Clear()
 
@@ -106,6 +111,23 @@ func Update(state State, buf kit.BufferSlice) {
 	topline = append(topline, kit.String(fmt.Sprintf("%s-%s", Program, Version)))
 	topline = append(topline, kit.String(" | press 'q' to quit"))
 	grid.Items["topline"] = topline
+
+	{
+		rows := make([]kit.TableRow, 0, len(state.Procs))
+		for _, proc := range state.Procs {
+			msg, isRunning := proc.Status()
+			icon := func() string {
+				if isRunning {
+					return "◷"
+				} else {
+					return "✓"
+				}
+			}()
+			s := kit.String(fmt.Sprintf("%s %s: %s", icon, proc.Name(), msg))
+			rows = append(rows, kit.Row(s))
+		}
+		grid.Items["procs"] = &kit.Table{Rows: rows}
+	}
 
 	cses := make([]string, len(state.Snapshot.ComponentStatuses))
 	for i, cs := range state.Snapshot.ComponentStatuses {
@@ -202,6 +224,25 @@ func Update(state State, buf kit.BufferSlice) {
 	grid.Draw(buf)
 }
 
+func runDeleteMaster(state *State) {
+	if state.Selected == "" {
+		return
+	}
+
+	for _, row := range state.Snapshot.NodeTable.Rows {
+		if row.AwsID == state.Selected {
+			name := row.Name
+			if name == "" {
+				return
+			}
+
+			ctx := context.Background()
+			state.Procs = append(state.Procs, proc.RunDeleteMaster(ctx, state.Clientset, state.EC2, name))
+			return
+		}
+	}
+}
+
 func main() {
 	defaultKubeconfig := func() string {
 		if user, err := user.Current(); err == nil && user.HomeDir != "" {
@@ -259,10 +300,17 @@ func main() {
 	areas["nodecount"] = kit.AreaAt(0, 2).Span(1, 1).WidthFr(1).HeightCh(1)
 	areas["component"] = kit.AreaAt(0, 3).Span(1, 1).WidthFr(1).HeightCh(1)
 	areas["main"] = kit.AreaAt(0, 4).Span(1, 1).WidthFr(1).HeightFr(1)
-	areas["log"] = kit.AreaAt(0, 5).Span(1, 1).WidthFr(1).HeightCh(5)
+	areas["procs"] = kit.AreaAt(0, 5).Span(1, 1).WidthFr(1).HeightFr(1)
+	areas["log"] = kit.AreaAt(0, 6).Span(1, 1).WidthFr(1).HeightCh(5)
 	grid := kit.NewGrid(areas)
 
-	state := State{Grid: grid, Logger: logger}
+	state := &State{
+		Grid:      grid,
+		Logger:    logger,
+		Procs:     make([]proc.Proc, 0),
+		Clientset: clientset,
+		EC2:       ec2client,
+	}
 
 	if err := func() error {
 		err := termbox.Init()
@@ -286,8 +334,11 @@ func main() {
 			case <-exitSignal:
 				return nil
 			case ch := <-termboxEvents.Chars:
-				if ch == 'q' {
+				switch ch {
+				case 'q':
 					return nil
+				case 'D':
+					runDeleteMaster(state)
 				}
 			case key := <-termboxEvents.Keys:
 				switch key {
@@ -309,7 +360,7 @@ func main() {
 			case snapshot := <-db.Snapshots:
 				state.Snapshot = snapshot
 				if state.Selected == "" && len(snapshot.NodeTable.Rows) > 0 {
-					state.Selected = snapshot.NodeTable.Rows[0].Name
+					state.Selected = snapshot.NodeTable.Rows[0].AwsID
 				}
 			case <-logger.Updated:
 				// update ui
