@@ -238,7 +238,11 @@ func (proc *DeleteMaster) run() {
 				break
 			}
 
-			watch, err := endpoints.Watch(metav1.ListOptions{})
+			watch, err := endpoints.Watch(metav1.ListOptions{
+				FieldSelector:   "metadata.name=kubernetes",
+				Watch:           true,
+				ResourceVersion: ep.ObjectMeta.ResourceVersion,
+			})
 			if err != nil {
 				proc.ctx.SetStatus("error watching ep/kubernetes for further changes: %v", err)
 				return
@@ -246,7 +250,7 @@ func (proc *DeleteMaster) run() {
 			defer watch.Stop()
 			select {
 			case ev := <-watch.ResultChan():
-				proc.ctx.SetStatus("ep/kubernetes event: %s", ev)
+				proc.ctx.SetStatus("ep/kubernetes event: %s", ev.Type)
 			case <-time.After(10 * time.Second):
 				proc.ctx.SetStatus("no change to ep/kubernetes for 10s")
 			}
