@@ -89,7 +89,7 @@ func (ctx *ProcContext) Subprocs() []Proc {
 func (ctx *ProcContext) push(p *Proc) {
 }
 
-type DeleteMaster struct {
+type DeleteNode struct {
 	ProcName string
 
 	name      string
@@ -98,9 +98,9 @@ type DeleteMaster struct {
 	ec2client *ec2.EC2
 }
 
-func RunDeleteMaster(ctx0 context.Context, clientset *kubernetes.Clientset, ec2client *ec2.EC2, name string) *DeleteMaster {
+func RunDeleteNode(ctx0 context.Context, clientset *kubernetes.Clientset, ec2client *ec2.EC2, name string) *DeleteNode {
 	ctx, cancel := context.WithCancel(ctx0)
-	proc := &DeleteMaster{
+	proc := &DeleteNode{
 		ProcName:  fmt.Sprintf("delete-master:%s", name),
 		name:      name,
 		ctx:       &ProcContext{parent: ctx, cancel: cancel},
@@ -111,15 +111,15 @@ func RunDeleteMaster(ctx0 context.Context, clientset *kubernetes.Clientset, ec2c
 	return proc
 }
 
-func (proc *DeleteMaster) Name() string {
+func (proc *DeleteNode) Name() string {
 	return proc.ProcName
 }
 
-func (proc *DeleteMaster) Status() (string, bool) {
+func (proc *DeleteNode) Status() (string, bool) {
 	return proc.ctx.Status(), proc.ctx.IsRunning()
 }
 
-func (proc *DeleteMaster) run() {
+func (proc *DeleteNode) run() {
 	defer proc.ctx.cancel()
 
 	proc.ctx.SetStatus("starting...")

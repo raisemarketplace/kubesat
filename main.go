@@ -224,7 +224,7 @@ func Update(state *State, buf kit.BufferSlice) {
 	grid.Draw(buf)
 }
 
-func runDeleteMaster(state *State) {
+func runDeleteNode(state *State) {
 	if state.Selected == "" {
 		return
 	}
@@ -237,7 +237,7 @@ func runDeleteMaster(state *State) {
 			}
 
 			ctx := context.Background()
-			state.Procs = append(state.Procs, proc.RunDeleteMaster(ctx, state.Clientset, state.EC2, name))
+			state.Procs = append(state.Procs, proc.RunDeleteNode(ctx, state.Clientset, state.EC2, name))
 			return
 		}
 	}
@@ -338,7 +338,7 @@ func main() {
 				case 'q':
 					return nil
 				case 'D':
-					runDeleteMaster(state)
+					runDeleteNode(state)
 				}
 			case key := <-termboxEvents.Keys:
 				switch key {
