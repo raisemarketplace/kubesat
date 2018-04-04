@@ -1,17 +1,12 @@
 package logger
 
 import (
+	"context"
 	"testing"
 )
 
 func TestLogger(t *testing.T) {
-	buf := New(3)
-	go func() {
-		// consume but ignore Updated events
-		for {
-			<-buf.Updated
-		}
-	}()
+	buf := New(context.TODO(), 3)
 
 	if buf.Len() != 0 {
 		t.Fatalf("buf.Len() should be %d but was %d", 0, buf.Len())
