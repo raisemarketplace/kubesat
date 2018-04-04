@@ -282,7 +282,9 @@ func main() {
 	ec2client := ec2.New(sess)
 
 	// TODO: hold more log lines
-	logger := logger.New(1)
+	logger := logger.New(context.TODO(), 1)
+	loggerUpdated := make(chan bool)
+	logger.Updated.Subscribe(loggerUpdated)
 
 	// gradually clear log buffer over time
 	go func() {
@@ -362,7 +364,7 @@ func main() {
 				if state.Selected == "" && len(snapshot.NodeTable.Rows) > 0 {
 					state.Selected = snapshot.NodeTable.Rows[0].AwsID
 				}
-			case <-logger.Updated:
+			case <-loggerUpdated:
 				// update ui
 			}
 		}
