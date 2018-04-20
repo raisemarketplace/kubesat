@@ -217,8 +217,14 @@ func Update(state *State, buf kit.BufferSlice) {
 
 	grid.Items["main"] = &table
 
-	if state.Logger.Len() > 0 {
-		grid.Items["log"] = kit.AttrString{fmt.Sprintf("%s", state.Logger.At(0).Message), termbox.ColorRed, 0}
+	{
+		len := state.Logger.Len()
+		rows := make([]kit.TableRow, 0, len)
+		for i := 0; i < len; i++ {
+			s := kit.AttrString{fmt.Sprintf("%s", state.Logger.At(i).Message), termbox.ColorRed, 0}
+			rows = append(rows, kit.Row(s))
+		}
+		grid.Items["log"] = &kit.Table{Rows: rows}
 	}
 
 	grid.Draw(buf)
@@ -281,8 +287,8 @@ func main() {
 	}))
 	ec2client := ec2.New(sess)
 
-	// TODO: hold more log lines
-	logger := logger.New(context.TODO(), 1)
+	loggerCapacity := 5
+	logger := logger.New(context.TODO(), loggerCapacity)
 	loggerUpdated := make(chan bool)
 	logger.Updated.Subscribe(loggerUpdated)
 
@@ -303,7 +309,7 @@ func main() {
 	areas["component"] = kit.AreaAt(0, 3).Span(1, 1).WidthFr(1).HeightCh(1)
 	areas["main"] = kit.AreaAt(0, 4).Span(1, 1).WidthFr(1).HeightFr(1)
 	areas["procs"] = kit.AreaAt(0, 5).Span(1, 1).WidthFr(1).HeightFr(1)
-	areas["log"] = kit.AreaAt(0, 6).Span(1, 1).WidthFr(1).HeightCh(5)
+	areas["log"] = kit.AreaAt(0, 6).Span(1, 1).WidthFr(1).HeightCh(loggerCapacity)
 	grid := kit.NewGrid(areas)
 
 	state := &State{
@@ -341,6 +347,8 @@ func main() {
 					return nil
 				case 'D':
 					runDeleteNode(state)
+				case 'L':
+					logger.Warnf("termbox: you pressed L at %s!", time.Now())
 				}
 			case key := <-termboxEvents.Keys:
 				switch key {
@@ -354,9 +362,7 @@ func main() {
 			case <-termboxEvents.MouseCoords:
 				// ignore
 			case err := <-termboxEvents.Errors:
-				go func() {
-					logger.Warnf("termbox: %v", err)
-				}()
+				logger.Warnf("termbox: %v", err)
 			case <-termboxEvents.Interrupts:
 				return nil
 			case snapshot := <-db.Snapshots:
