@@ -210,6 +210,8 @@ func (db *DB) loopKubernetes() {
 		}
 
 		db.Kubernetes() <- kubernetesData
+
+		db.logger.Infof("refreshed kubernetes data")
 	}
 }
 
