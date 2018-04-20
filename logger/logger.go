@@ -102,7 +102,7 @@ func (logger *Logger) append(m Message) {
 }
 
 func (logger *Logger) at(i int) Message {
-	return logger.messages[logger.first+i%len(logger.messages)]
+	return logger.messages[(logger.first+i)%len(logger.messages)]
 }
 
 func (logger *Logger) logf(level LogLevel, format string, args ...interface{}) {
