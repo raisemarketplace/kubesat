@@ -66,6 +66,9 @@ type PodCounts struct {
 	Succeeded int
 	Failed    int
 	Unknown   int
+
+	// sub-states (Pod is in phase "Running" but may have containers in "Error")
+	WithError int
 }
 
 type DB struct {
@@ -317,30 +320,37 @@ func Join(kubernetesData KubernetesData, awsData AwsData) Snapshot {
 			nodesCounts[pod.Spec.NodeName] = nodeCounts
 		}
 
+		nodeCounts.Total++
+
 		switch pod.Status.Phase {
 		case v1.PodPending:
 			clusterCounts.Pending++
 			nodeCounts.Pending++
-			nodeCounts.Total++
 		case v1.PodRunning:
 			clusterCounts.Running++
 			nodeCounts.Running++
-			nodeCounts.Total++
+
+			for _, status := range pod.Status.ContainerStatuses {
+				if status.State.Terminated == nil {
+					continue
+				}
+
+				if status.State.Terminated.Reason != "Error" {
+					continue
+				}
+				nodeCounts.WithError++
+			}
 		case v1.PodSucceeded:
 			clusterCounts.Succeeded++
 			nodeCounts.Succeeded++
-			nodeCounts.Total++
 		case v1.PodFailed:
 			clusterCounts.Failed++
 			nodeCounts.Failed++
-			nodeCounts.Total++
 		case v1.PodUnknown:
 			clusterCounts.Unknown++
 			nodeCounts.Unknown++
-			nodeCounts.Total++
 		default:
 			// TODO log? add to Unknown?
-			nodeCounts.Total++
 		}
 	}
 

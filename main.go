@@ -148,7 +148,7 @@ func Update(state *State, buf kit.BufferSlice) {
 		padding,
 		kit.Rune('◷'),
 		padding,
-		kit.String("Pend/Run"), // pending, running
+		kit.String("Pend/Run/Err"), // pending, running, running-with-error
 		padding,
 		kit.String("version"),
 		padding,
@@ -194,7 +194,7 @@ func Update(state *State, buf kit.BufferSlice) {
 				padding,
 				kit.Cell(termbox.Cell{Banana, AgeColor(time.Since(data.CreatedAt)), 0}),
 				padding,
-				kit.String(fmt.Sprintf("%d/%d", data.PodCounts.Pending, data.PodCounts.Running)),
+				kit.String(fmt.Sprintf("%d/%d/%d", data.PodCounts.Pending, data.PodCounts.Running, data.PodCounts.WithError)),
 				padding,
 				kit.String(data.KubeletVersion),
 				padding,
