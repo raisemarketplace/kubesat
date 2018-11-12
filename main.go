@@ -307,7 +307,7 @@ func main() {
 	areas["podcounts"] = kit.AreaAt(0, 1).Span(1, 1).WidthFr(1).HeightCh(1)
 	areas["nodecount"] = kit.AreaAt(0, 2).Span(1, 1).WidthFr(1).HeightCh(1)
 	areas["component"] = kit.AreaAt(0, 3).Span(1, 1).WidthFr(1).HeightCh(1)
-	areas["main"] = kit.AreaAt(0, 4).Span(1, 1).WidthFr(1).HeightFr(1)
+	areas["main"] = kit.AreaAt(0, 4).Span(1, 1).WidthFr(1).HeightFr(3)
 	areas["procs"] = kit.AreaAt(0, 5).Span(1, 1).WidthFr(1).HeightFr(1)
 	areas["log"] = kit.AreaAt(0, 6).Span(1, 1).WidthFr(1).HeightCh(loggerCapacity)
 	grid := kit.NewGrid(areas)
