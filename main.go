@@ -18,6 +18,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 
@@ -194,7 +195,7 @@ func Update(state *State, buf kit.BufferSlice) {
 
 			mem := " "
 			if data.AllocatableMemory != nil {
-				mem = fmt.Sprintf("%3d", data.AllocatableMemory.ScaledValue(9))
+				mem = fmt.Sprintf("%3d", data.AllocatableMemory.ScaledValue(resource.Giga))
 			}
 
 			row := kit.Row(
