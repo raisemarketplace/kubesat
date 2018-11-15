@@ -152,7 +152,9 @@ func Update(state *State, buf kit.BufferSlice) {
 		padding,
 		kit.String("version"),
 		padding,
-		kit.String("cpu/mem"),
+		kit.String("cpu"),
+		padding,
+		kit.String("mem"),
 		padding,
 		kit.String("aws-id"),
 		padding,
@@ -192,7 +194,7 @@ func Update(state *State, buf kit.BufferSlice) {
 
 			mem := " "
 			if data.AllocatableMemory != nil {
-				mem = fmt.Sprintf("%dGiB", data.AllocatableMemory.ScaledValue(9))
+				mem = fmt.Sprintf("%d", data.AllocatableMemory.ScaledValue(9))
 			}
 
 			row := kit.Row(
@@ -210,7 +212,9 @@ func Update(state *State, buf kit.BufferSlice) {
 				padding,
 				kit.String(data.KubeletVersion),
 				padding,
-				kit.String(fmt.Sprintf("%s/%s", cpu, mem)),
+				kit.String(fmt.Sprintf("%s", cpu)),
+				padding,
+				kit.String(fmt.Sprintf("%s", mem)),
 				padding,
 				kit.String(data.AwsID),
 				padding,
