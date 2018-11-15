@@ -152,6 +152,8 @@ func Update(state *State, buf kit.BufferSlice) {
 		padding,
 		kit.String("version"),
 		padding,
+		kit.String("cpu/mem"),
+		padding,
 		kit.String("aws-id"),
 		padding,
 		kit.String("image-id"),
@@ -183,6 +185,16 @@ func Update(state *State, buf kit.BufferSlice) {
 		}
 
 		for _, data := range state.Snapshot.NodeTable.Rows {
+			cpu := " "
+			if data.AllocatableCpu != nil {
+				cpu = fmt.Sprintf("%d", data.AllocatableCpu.ScaledValue(0))
+			}
+
+			mem := " "
+			if data.AllocatableMemory != nil {
+				mem = fmt.Sprintf("%dGiB", data.AllocatableMemory.ScaledValue(9))
+			}
+
 			row := kit.Row(
 				kit.String(Optional(data.IsMaster, "m")),
 				kit.String(Optional(data.IsControllerManagerLeader, "c")),
@@ -197,6 +209,8 @@ func Update(state *State, buf kit.BufferSlice) {
 				kit.String(fmt.Sprintf("%d/%d/%d", data.PodCounts.Pending, data.PodCounts.Running, data.PodCounts.WithError)),
 				padding,
 				kit.String(data.KubeletVersion),
+				padding,
+				kit.String(fmt.Sprintf("%s/%s", cpu, mem)),
 				padding,
 				kit.String(data.AwsID),
 				padding,

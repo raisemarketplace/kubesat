@@ -369,6 +369,8 @@ func Join(kubernetesData KubernetesData, awsData AwsData) Snapshot {
 			row.IsCordoned = node.Spec.Unschedulable
 			row.CreatedAt = node.ObjectMeta.CreationTimestamp.Time
 			row.KubeletVersion = node.Status.NodeInfo.KubeletVersion
+			row.AllocatableCpu = node.Status.Allocatable.Cpu()
+			row.AllocatableMemory = node.Status.Allocatable.Memory()
 			if counts, ok := nodesCounts[node.Name]; ok {
 				row.PodCounts = *counts
 			}

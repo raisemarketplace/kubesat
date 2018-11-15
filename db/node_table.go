@@ -3,6 +3,8 @@ package db
 import (
 	"sort"
 	"time"
+
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 type NodeTableRow struct {
@@ -19,6 +21,8 @@ type NodeTableRow struct {
 	PodsFailedCount           int
 	PodsUnknownCount          int
 	KubeletVersion            string
+	AllocatableCpu            *resource.Quantity
+	AllocatableMemory         *resource.Quantity
 	AwsID                     string // k8s external id, also in aws
 	ImageID                   string
 	ImageVersion              string
