@@ -148,7 +148,7 @@ func Update(state *State, buf kit.BufferSlice) {
 		padding,
 		kit.Rune('◷'),
 		padding,
-		kit.String("Pend/Run/Err"), // pending, running, running-with-error
+		kit.String("P/R/E"), // pending, running, running-with-error
 		padding,
 		kit.String("version"),
 		padding,
