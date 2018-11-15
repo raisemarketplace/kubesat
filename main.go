@@ -189,12 +189,12 @@ func Update(state *State, buf kit.BufferSlice) {
 		for _, data := range state.Snapshot.NodeTable.Rows {
 			cpu := " "
 			if data.AllocatableCpu != nil {
-				cpu = fmt.Sprintf("%d", data.AllocatableCpu.ScaledValue(0))
+				cpu = fmt.Sprintf("%3d", data.AllocatableCpu.ScaledValue(0))
 			}
 
 			mem := " "
 			if data.AllocatableMemory != nil {
-				mem = fmt.Sprintf("%d", data.AllocatableMemory.ScaledValue(9))
+				mem = fmt.Sprintf("%3d", data.AllocatableMemory.ScaledValue(9))
 			}
 
 			row := kit.Row(
