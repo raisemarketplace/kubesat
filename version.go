@@ -2,5 +2,5 @@ package main
 
 var (
 	Program = "kubesat"
-	Version = "0.2-SNAPSHOT"
+	Version = "0.3-SNAPSHOT"
 )
