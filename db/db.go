@@ -348,10 +348,10 @@ func Join(kubernetesData KubernetesData, awsData AwsData) Snapshot {
 			if v, ok := node.ObjectMeta.Labels["kubernetes.io/role"]; ok && v == "master" {
 				row.IsMaster = true
 			}
-			if haveControllerManagerLeader && strings.HasPrefix(node.Name, controllerManagerLeader) {
+			if haveControllerManagerLeader && strings.HasPrefix(node.ObjectMeta.Labels["kubernetes.io/hostname"], controllerManagerLeader) {
 				row.IsControllerManagerLeader = true
 			}
-			if haveSchedulerLeader && strings.HasPrefix(node.Name, schedulerLeader) {
+			if haveSchedulerLeader && strings.HasPrefix(node.ObjectMeta.Labels["kubernetes.io/hostname"], schedulerLeader) {
 				row.IsSchedulerLeader = true
 			}
 			row.IsCordoned = node.Spec.Unschedulable
